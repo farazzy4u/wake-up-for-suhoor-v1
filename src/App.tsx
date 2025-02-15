@@ -32,9 +32,11 @@ interface Location {
 
 interface HijriDate {
   day: string;
-  month: string;
+  month: {
+    en: string;
+    ar: string;
+  };
   year: string;
-  format: string;
 }
 
 const MILLISECONDS_IN_MINUTE = 60000;
@@ -75,6 +77,19 @@ function formatPrayerTime(timeStr: string): string {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
+  });
+}
+
+// Update the formatGregorianDate function to handle tomorrow's date properly
+function formatGregorianDate(date: Date): string {
+  const tomorrow = new Date(date);
+  tomorrow.setDate(tomorrow.getDate() + 1); // Ensure we're showing tomorrow
+  
+  return tomorrow.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
   });
 }
 
@@ -164,11 +179,13 @@ function App() {
   useEffect(() => {
     async function fetchHijriDate() {
       try {
+        console.log('Fetching Hijri date for:', getTomorrowDate()); // Debug log
         const response = await fetch(
-          'https://api.aladhan.com/v1/gToH?date=' + getTomorrowDate()
+          `https://api.aladhan.com/v1/gToH/${getTomorrowDate()}`
         );
         const data = await response.json();
-        if (data.code === 200) {
+        console.log('Hijri API response:', data); // Debug log
+        if (data.code === 200 && data.data) {
           setHijriDate(data.data.hijri);
         }
       } catch (err) {
@@ -186,10 +203,20 @@ function App() {
   };
 
   const handleBedTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const [hours, minutes] = event.target.value.split(':').map(Number);
-    const newBedTime = new Date(bedTime);
-    newBedTime.setHours(hours, minutes, 0, 0);
-    setBedTime(newBedTime);
+    const timeValue = event.target.value;
+    
+    // Only update if we have a valid time value
+    if (timeValue) {
+      const [hours, minutes] = timeValue.split(':').map(Number);
+      const newBedTime = new Date();
+      
+      // If the time is before current time, assume it's for today
+      // If it's after current time, keep it for today
+      newBedTime.setHours(hours, minutes, 0, 0);
+      
+      // Update the state
+      setBedTime(newBedTime);
+    }
   };
 
   const handleLocationSubmit = (e: React.FormEvent) => {
@@ -201,15 +228,29 @@ function App() {
     });
   };
 
-  // Create a date for tomorrow
+  // Update the getTomorrowDate function to return the correct format for the API
   const getTomorrowDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toDateString();
+    // Format date as DD-MM-YYYY for the Aladhan API
+    return `${tomorrow.getDate()}-${tomorrow.getMonth() + 1}-${tomorrow.getFullYear()}`;
   };
 
-  // Update the fajrTime calculation to use tomorrow's date
-  const fajrTime = prayerTimes ? new Date(`${getTomorrowDate()} ${prayerTimes.Fajr}`) : null;
+  // Update the fajrTime calculation
+  const getFajrDateTime = () => {
+    if (!prayerTimes?.Fajr) return null;
+    
+    const [hours, minutes] = prayerTimes.Fajr.split(':').map(Number);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(hours, minutes, 0, 0);
+    
+    console.log('Constructed Fajr time:', tomorrow); // Debug log
+    return tomorrow;
+  };
+
+  // Update where we use fajrTime
+  const fajrTime = getFajrDateTime();
   const isNearFajr = fajrTime && Math.abs(currentTime.getTime() - fajrTime.getTime()) <= 30 * MILLISECONDS_IN_MINUTE;
 
   console.log('Tomorrow\'s date:', getTomorrowDate());
@@ -221,7 +262,7 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-orange-50/80 to-amber-100/70 text-slate-800 p-8">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-yellow-50/90 to-orange-50/80 text-slate-800 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -229,18 +270,22 @@ function App() {
             <h1 className="text-3xl font-bold text-amber-800">Wake Up For Suhoor</h1>
             <Moon className="w-8 h-8 text-amber-600" />
           </div>
-          <p className="text-amber-700/80 text-lg mb-2">
+          <p className="text-amber-800/90 text-lg mb-2">
             Plan your sleep schedule for a blessed Ramadan
           </p>
-          {hijriDate && (
-            <p className="text-amber-600/90 text-sm font-medium">
-              {hijriDate.day} {hijriDate.month} {hijriDate.year} AH
+          {/* Updated date display */}
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-amber-700 text-sm font-medium">
+              {hijriDate && `${hijriDate.day} ${hijriDate.month.en} ${hijriDate.year} AH`}
             </p>
-          )}
+            <p className="text-amber-600/80 text-sm">
+              {formatGregorianDate(new Date())}
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-amber-200">
+          <div className="bg-white/40 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-amber-200 hover:border-amber-300 transition-colors">
             <div className="flex items-center gap-2 mb-6">
               <MapPin className="w-5 h-5 text-amber-600" />
               <h2 className="text-xl font-semibold text-amber-800">Location Settings</h2>
@@ -255,7 +300,7 @@ function App() {
                   id="city"
                   name="city"
                   defaultValue={location.city}
-                  className="w-full bg-white/80 text-slate-800 px-4 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full bg-white/60 text-slate-800 px-4 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 focus:outline-none"
                 />
               </div>
               <div>
@@ -267,7 +312,7 @@ function App() {
                   id="country"
                   name="country"
                   defaultValue={location.country}
-                  className="w-full bg-white/80 text-slate-800 px-4 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full bg-white/60 text-slate-800 px-4 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 focus:outline-none"
                 />
               </div>
               <button
@@ -279,7 +324,7 @@ function App() {
             </form>
           </div>
 
-          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-amber-200">
+          <div className="bg-white/40 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-amber-200 hover:border-amber-300 transition-colors">
             <h2 className="text-xl font-semibold mb-6 text-amber-800">Prayer Times</h2>
             {loading ? (
               <div className="flex items-center justify-center h-[200px]">
@@ -341,7 +386,7 @@ function App() {
           </div>
         </div>
 
-        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg mb-8 border border-amber-200">
+        <div className="bg-white/40 backdrop-blur-sm rounded-xl p-6 shadow-lg mb-8 border border-amber-200 hover:border-amber-300 transition-colors">
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label htmlFor="bedTime" className="block text-sm font-medium text-amber-700 mb-2">
@@ -350,18 +395,15 @@ function App() {
               <input
                 type="time"
                 id="bedTime"
-                value={`${bedTime.getHours().toString().padStart(2, '0')}:${bedTime
-                  .getMinutes()
-                  .toString()
-                  .padStart(2, '0')}`}
+                value={`${bedTime.getHours().toString().padStart(2, '0')}:${bedTime.getMinutes().toString().padStart(2, '0')}`}
                 onChange={handleBedTimeChange}
-                className="w-full bg-white/80 text-slate-800 px-4 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                className="w-full bg-white/60 text-slate-800 px-4 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 focus:outline-none"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-amber-200">
+        <div className="bg-white/40 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-amber-200 hover:border-amber-300">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <Star className="w-5 h-5 text-amber-600" />
@@ -383,15 +425,15 @@ function App() {
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full bg-teal-500"></div>
-                <span className="text-sm font-medium text-slate-700">Perfect for Suhoor</span>
+                <span className="text-sm font-medium text-slate-700">✨ Perfect for Suhoor</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full bg-amber-500"></div>
-                <span className="text-sm font-medium text-slate-700">Limited Time</span>
+                <div className="w-4 h-4 rounded-full bg-yellow-600"></div>
+                <span className="text-sm font-medium text-slate-700">⚡️ Limited Time</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full bg-rose-500"></div>
-                <span className="text-sm font-medium text-slate-700">Missed Suhoor</span>
+                <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                <span className="text-sm font-medium text-slate-700">😴 Missed Suhoor</span>
               </div>
             </div>
           </div>
@@ -401,7 +443,9 @@ function App() {
               const timeToFajr = fajrTime ? fajrTime.getTime() - cycle.wakeTime.getTime() : 0;
               const minutesToFajr = Math.floor(timeToFajr / MILLISECONDS_IN_MINUTE);
               
-              console.log(`Wake time: ${formatTime(cycle.wakeTime)}, Minutes to Fajr: ${minutesToFajr}`);
+              console.log(`Wake time: ${formatTime(cycle.wakeTime)}`);
+              console.log(`Fajr time: ${fajrTime ? formatTime(fajrTime) : 'Not set'}`);
+              console.log(`Minutes to Fajr: ${minutesToFajr}`);
               
               // Updated more flexible logic
               const isRecommendedForFajr = fajrTime && 
@@ -422,52 +466,52 @@ function App() {
               return (
                 <div 
                   key={cycle.cycles}
-                  className={`p-4 rounded-lg border ${
+                  className={`p-4 rounded-lg border transition-all duration-200 ${
                     isRecommendedForFajr
-                      ? 'bg-teal-100/40 border-teal-300 shadow-sm'
+                      ? 'bg-teal-50/90 border-teal-300 scale-105 shadow-md transform hover:scale-110'
                       : isWarningTime
-                      ? 'bg-amber-100/40 border-amber-300 shadow-sm'
+                      ? 'bg-yellow-100/95 border-yellow-500'
                       : isLateWakeup
-                      ? 'bg-rose-100/40 border-rose-300 shadow-sm'
-                      : 'bg-slate-100/40 border-slate-300 shadow-sm'
+                      ? 'bg-red-50/90 border-red-300 scale-100 hover:scale-95 opacity-80 hover:opacity-70'
+                      : 'bg-amber-50/70 border-amber-200'
                   }`}
                 >
                   <div className="text-center space-y-2">
                     <p className={`text-2xl font-bold ${
                       isLateWakeup 
-                        ? 'text-rose-700' 
+                        ? 'text-red-700' 
                         : isWarningTime
-                        ? 'text-amber-700'
+                        ? 'text-yellow-900'
                         : isRecommendedForFajr 
                         ? 'text-teal-700' 
-                        : 'text-slate-700'
+                        : 'text-amber-700'
                     }`}>
                       {formatTime(cycle.wakeTime)}
                     </p>
                     <p className={`text-sm font-medium ${
                       isLateWakeup 
-                        ? 'text-rose-600' 
+                        ? 'text-red-600' 
                         : isWarningTime
-                        ? 'text-amber-600'
+                        ? 'text-yellow-700'
                         : isRecommendedForFajr 
                         ? 'text-teal-600' 
-                        : 'text-slate-600'
+                        : 'text-amber-600'
                     }`}>
                       {cycle.cycles} cycles ({cycle.duration} hours)
                     </p>
                     {isRecommendedForFajr && (
-                      <span className="inline-block mt-2 px-3 py-1 bg-teal-100 text-teal-700 text-xs font-medium rounded-full border border-teal-200">
-                        Recommended for Fajr
+                      <span className="inline-block mt-2 px-4 py-1.5 bg-teal-100/90 text-teal-800 text-xs font-medium rounded-full border border-teal-300 shadow-sm shadow-teal-200/50 ring-1 ring-teal-400/30">
+                        ✨ Recommended for Fajr
                       </span>
                     )}
                     {isWarningTime && (
-                      <span className="inline-block mt-2 px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full border border-amber-200">
-                        Hurry up for Suhoor!
+                      <span className="inline-block mt-2 px-3 py-1 bg-yellow-100/95 text-yellow-900 text-xs font-medium rounded-full border border-yellow-500 shadow-sm shadow-yellow-200/50 ring-1 ring-yellow-400/30">
+                        ⚡️ Hurry up for Suhoor!
                       </span>
                     )}
                     {isLateWakeup && (
-                      <span className="inline-block mt-2 px-3 py-1 bg-rose-100 text-rose-700 text-xs font-medium rounded-full border border-rose-200">
-                        Too late for Suhoor
+                      <span className="inline-block mt-2 px-3 py-1 bg-red-100/90 text-red-800 text-xs font-medium rounded-full border border-red-300 shadow-sm shadow-red-200/50 ring-1 ring-red-400/30 opacity-90">
+                        😴 Too late for Suhoor
                       </span>
                     )}
                   </div>
@@ -497,30 +541,14 @@ function App() {
                   Waking up at the end of a cycle helps you feel more refreshed.
                 </p>
                 <div className="pt-2 space-y-1">
-                  <p className="text-xs text-slate-500">Academic References:</p>
+                  <p className="text-xs text-slate-500">Academic Reference:</p>
                   <ul className="text-xs text-amber-700 space-y-1">
-                    <li>
-                      <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2279166/" 
-                         target="_blank" 
-                         rel="noopener noreferrer"
-                         className="hover:text-amber-600 underline">
-                        "The Nature of Sleep" - National Institute of Health
-                      </a>
-                    </li>
                     <li>
                       <a href="https://www.sleepfoundation.org/stages-of-sleep" 
                          target="_blank" 
                          rel="noopener noreferrer"
                          className="hover:text-amber-600 underline">
                         "Stages of Sleep" - National Sleep Foundation
-                      </a>
-                    </li>
-                    <li>
-                      <a href="https://pubmed.ncbi.nlm.nih.gov/26564128/" 
-                         target="_blank" 
-                         rel="noopener noreferrer"
-                         className="hover:text-amber-600 underline">
-                        "Sleep Cycles and the Sleep-Wake Cycle" - PubMed Central
                       </a>
                     </li>
                   </ul>
