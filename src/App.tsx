@@ -9,7 +9,6 @@ interface SleepCycle {
 
 interface SleepSchedule {
   bedTime: Date;
-  wakeUpTime: Date;
   sleepCycles: SleepCycle[];
 }
 
@@ -41,7 +40,7 @@ interface HijriDate {
 
 const MILLISECONDS_IN_MINUTE = 60000;
 
-function calculateSleepCycles(bedTime: Date, wakeUpTime: Date): SleepCycle[] {
+function calculateSleepCycles(bedTime: Date): SleepCycle[] {
   const cycles: SleepCycle[] = [];
   const cycleLength = 90; // minutes
   
@@ -99,13 +98,6 @@ function App() {
     const now = new Date();
     now.setHours(22, 0, 0, 0);
     return now;
-  });
-
-  const [wakeUpTime] = useState<Date>(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(5, 0, 0, 0);
-    return tomorrow;
   });
 
   const [location, setLocation] = useState<Location>({
@@ -198,8 +190,7 @@ function App() {
 
   const sleepSchedule: SleepSchedule = {
     bedTime,
-    wakeUpTime,
-    sleepCycles: calculateSleepCycles(bedTime, wakeUpTime),
+    sleepCycles: calculateSleepCycles(bedTime),
   };
 
   const handleBedTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
