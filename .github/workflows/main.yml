@@ -1,0 +1,2 @@
+# Create the directories if they don't exist
+mkdir -p .github/workflows
