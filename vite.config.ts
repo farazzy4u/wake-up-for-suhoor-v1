@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/wake-up-for-suhoor-v1/',
+  // Use different base paths for dev and prod
+  base: command === 'serve' ? '/' : '/wake-up-for-suhoor-v1/',
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -43,4 +44,4 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   }
-});
+}));
