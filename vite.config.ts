@@ -1,11 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  // Use different base paths for dev and prod
-  base: command === 'serve' ? '/' : '/wake-up-for-suhoor-v1/',
+  base: '/wake-up-for-suhoor-v1/',
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -18,12 +18,12 @@ export default defineConfig(({ command }) => ({
   server: {
     port: 5173,
     strictPort: true,
-    open: true,
-    middlewareMode: false
+    open: true
   },
   resolve: {
     alias: {
-      '@': 'src',
+      '@': path.resolve(__dirname, './src'),
+      '@assets': path.resolve(__dirname, './src/assets')
     },
   }
 }));

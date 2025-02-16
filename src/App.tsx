@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Clock, MapPin, Loader2, Moon, Star } from 'lucide-react';
+import { Clock, MapPin, Loader2, Star } from 'lucide-react';
+import moonIcon from '@assets/moon.svg';
 
 interface SleepCycle {
   cycles: number;
@@ -252,14 +253,16 @@ function App() {
     fajrTime ? Math.floor((fajrTime.getTime() - currentTime.getTime()) / MILLISECONDS_IN_MINUTE) : 'N/A'
   );
 
+  const moonIconPath = moonIcon;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-yellow-50/90 to-orange-50/80 text-slate-800 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Moon className="w-8 h-8 text-amber-600" />
+            <img src={moonIconPath} alt="Moon" className="w-8 h-8 text-amber-600" />
             <h1 className="text-3xl font-bold text-amber-800">Wake Up For Suhoor</h1>
-            <Moon className="w-8 h-8 text-amber-600" />
+            <img src={moonIconPath} alt="Moon" className="w-8 h-8 text-amber-600" />
           </div>
           <p className="text-amber-800/90 text-lg mb-2">
             Plan your sleep schedule for a blessed Ramadan
@@ -403,7 +406,7 @@ function App() {
             {fajrTime && (
               <div className="mt-2 p-3 bg-amber-50/80 rounded-lg border border-amber-200">
                 <div className="flex items-center justify-center gap-2">
-                  <Moon className="w-4 h-4 text-amber-600" />
+                  <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-amber-600" />
                   <span className="text-amber-800 font-medium">
                     Tomorrow's Fajr: {prayerTimes?.Fajr ? formatPrayerTime(prayerTimes.Fajr) : ''}
                   </span>
@@ -515,7 +518,7 @@ function App() {
         <div className="mt-4 space-y-4">
           <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 text-sm text-slate-600 border border-amber-200">
             <div className="flex items-start gap-2">
-              <Moon className="w-4 h-4 text-amber-600 mt-0.5" />
+              <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-amber-600 mt-0.5" />
               <p>Each sleep cycle is 90 minutes. Green times give you 20-90 minutes before Fajr, perfect for Suhoor.</p>
             </div>
           </div>
