@@ -1,12 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   plugins: [react()],
-  // Use different base paths for dev and prod
-  base: command === 'serve' ? '/' : '/wake-up-for-suhoor-v1/',
+  base: '/wake-up-for-suhoor-v1/',  // Update base for GitHub Pages
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -20,7 +18,7 @@ export default defineConfig(({ command }) => ({
     },
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html')
+        main: 'index.html'
       },
       output: {
         format: 'es',
@@ -41,7 +39,7 @@ export default defineConfig(({ command }) => ({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': 'src',
     },
   }
-}));
+});
