@@ -2,9 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/wake-up-for-suhoor-v1/',  // Update base for GitHub Pages
+  // Use different base paths for dev and prod
+  base: command === 'serve' ? '/' : '/wake-up-for-suhoor-v1/',
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -42,4 +43,4 @@ export default defineConfig({
       '@': 'src',
     },
   }
-});
+}));
