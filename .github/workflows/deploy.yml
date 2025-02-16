@@ -28,7 +28,12 @@ jobs:
           npm run build
           cp public/moon.svg dist/
           cp public/404.html dist/
+          cp public/.htaccess dist/
           touch dist/.nojekyll
+          echo '/*    /index.html   200' > dist/_redirects
+          echo '/*.js    application/javascript' > dist/_headers
+          echo '/*.css   text/css' >> dist/_headers
+          echo '/*.svg   image/svg+xml' >> dist/_headers
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4

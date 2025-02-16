@@ -1,11 +1,10 @@
-<IfModule mod_mime.c>
-    AddType application/javascript .js
-    AddType application/javascript .mjs
-    AddType text/javascript .js
-    AddType text/javascript .mjs
-</IfModule>
+AddType application/javascript .js
+AddType application/javascript .mjs
+AddType text/javascript .js
+AddType text/javascript .mjs
+AddType text/css .css
+AddType image/svg+xml .svg
 
 <IfModule mod_headers.c>
     Header set Access-Control-Allow-Origin "*"
-    Header set Content-Type "application/javascript" env=IS_JS
 </IfModule> 
