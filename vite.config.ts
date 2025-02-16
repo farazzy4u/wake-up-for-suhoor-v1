@@ -14,13 +14,18 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: true,
     copyPublicDir: true,
+    modulePreload: {
+      polyfill: true
+    },
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html')
+      },
       output: {
-        manualChunks: undefined,
         format: 'es',
-        entryFileNames: '[name].[hash].js',
-        chunkFileNames: '[name].[hash].js',
-        assetFileNames: '[name].[hash].[ext]'
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
