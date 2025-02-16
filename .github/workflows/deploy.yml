@@ -29,6 +29,8 @@ jobs:
           cp public/moon.svg dist/
           cp public/404.html dist/
           touch dist/.nojekyll
+          echo '/* /index.html 200' > dist/_redirects
+          echo '{"headers":[{"source":"/(.*)", "headers":[{"key":"Content-Type","value":"application/javascript"}]}]}' > dist/vercel.json
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
