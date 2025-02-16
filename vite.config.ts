@@ -19,10 +19,7 @@ export default defineConfig(({ command }) => ({
     port: 5173,
     strictPort: true,
     open: true,
-    fs: {
-      strict: true,
-      allow: ['..']
-    }
+    middlewareMode: false
   },
   resolve: {
     alias: {
