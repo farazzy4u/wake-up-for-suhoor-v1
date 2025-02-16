@@ -13,21 +13,7 @@ export default defineConfig(({ command }) => ({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
-    copyPublicDir: true,
-    modulePreload: {
-      polyfill: true
-    },
-    rollupOptions: {
-      input: {
-        main: 'index.html'
-      },
-      output: {
-        format: 'es',
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      }
-    }
+    copyPublicDir: true
   },
   server: {
     port: 5173,
