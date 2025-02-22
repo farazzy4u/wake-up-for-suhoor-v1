@@ -5,6 +5,7 @@ import moonIcon from '@assets/moon.svg';
 interface SleepCycle {
   cycles: number;
   duration: number;
+  totalDuration: number;
   wakeTime: Date;
 }
 
@@ -43,15 +44,19 @@ const MILLISECONDS_IN_MINUTE = 60000;
 
 function calculateSleepCycles(bedTime: Date): SleepCycle[] {
   const cycles: SleepCycle[] = [];
-  const cycleLength = 90; // minutes
-  
+  const cycleLength = 90;
+  const fallAsleepBuffer = 15;
+  const sleepStartTime = new Date(bedTime.getTime() + fallAsleepBuffer * 60000);
+
   for (let i = 2; i <= 6; i++) {
     const durationMinutes = i * cycleLength;
-    const wakeTime = new Date(bedTime.getTime() + durationMinutes * 60000);
+    const totalDuration = fallAsleepBuffer + durationMinutes;
+    const wakeTime = new Date(sleepStartTime.getTime() + durationMinutes * 60000);
     
     cycles.push({
       cycles: i,
       duration: durationMinutes / 60,
+      totalDuration: totalDuration / 60,
       wakeTime,
     });
   }
@@ -68,7 +73,6 @@ function formatTime(date: Date): string {
 }
 
 function formatPrayerTime(timeStr: string): string {
-  // Convert 24-hour format to AM/PM
   const [hours, minutes] = timeStr.split(':').map(Number);
   const date = new Date();
   date.setHours(hours, minutes);
@@ -80,10 +84,9 @@ function formatPrayerTime(timeStr: string): string {
   });
 }
 
-// Update the formatGregorianDate function to handle tomorrow's date properly
 function formatGregorianDate(date: Date): string {
   const tomorrow = new Date(date);
-  tomorrow.setDate(tomorrow.getDate() + 1); // Ensure we're showing tomorrow
+  tomorrow.setDate(tomorrow.getDate() + 1);
   
   return tomorrow.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -172,12 +175,10 @@ function App() {
   useEffect(() => {
     async function fetchHijriDate() {
       try {
-        console.log('Fetching Hijri date for:', getTomorrowDate()); // Debug log
         const response = await fetch(
           `https://api.aladhan.com/v1/gToH/${getTomorrowDate()}`
         );
         const data = await response.json();
-        console.log('Hijri API response:', data); // Debug log
         if (data.code === 200 && data.data) {
           setHijriDate(data.data.hijri);
         }
@@ -197,16 +198,10 @@ function App() {
   const handleBedTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const timeValue = event.target.value;
     
-    // Only update if we have a valid time value
     if (timeValue) {
       const [hours, minutes] = timeValue.split(':').map(Number);
       const newBedTime = new Date();
-      
-      // If the time is before current time, assume it's for today
-      // If it's after current time, keep it for today
       newBedTime.setHours(hours, minutes, 0, 0);
-      
-      // Update the state
       setBedTime(newBedTime);
     }
   };
@@ -220,15 +215,12 @@ function App() {
     });
   };
 
-  // Update the getTomorrowDate function to return the correct format for the API
   const getTomorrowDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    // Format date as DD-MM-YYYY for the Aladhan API
     return `${tomorrow.getDate()}-${tomorrow.getMonth() + 1}-${tomorrow.getFullYear()}`;
   };
 
-  // Update the fajrTime calculation
   const getFajrDateTime = () => {
     if (!prayerTimes?.Fajr) return null;
     
@@ -237,22 +229,11 @@ function App() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(hours, minutes, 0, 0);
     
-    console.log('Constructed Fajr time:', tomorrow); // Debug log
     return tomorrow;
   };
 
-  // Update where we use fajrTime
   const fajrTime = getFajrDateTime();
   const isNearFajr = fajrTime && Math.abs(currentTime.getTime() - fajrTime.getTime()) <= 30 * MILLISECONDS_IN_MINUTE;
-
-  console.log('Tomorrow\'s date:', getTomorrowDate());
-  console.log('Fajr time:', fajrTime);
-  console.log('Current time:', currentTime);
-  console.log('Is near Fajr:', isNearFajr);
-  console.log('Time until Fajr (minutes):', 
-    fajrTime ? Math.floor((fajrTime.getTime() - currentTime.getTime()) / MILLISECONDS_IN_MINUTE) : 'N/A'
-  );
-
   const moonIconPath = moonIcon;
 
   return (
@@ -267,7 +248,6 @@ function App() {
           <p className="text-amber-800/90 text-lg mb-2">
             Plan your sleep schedule for a blessed Ramadan
           </p>
-          {/* Updated date display */}
           <div className="flex flex-col items-center gap-1">
             <p className="text-amber-700 text-sm font-medium">
               {hijriDate && `${hijriDate.day} ${hijriDate.month.en} ${hijriDate.year} AH`}
@@ -353,8 +333,6 @@ function App() {
                     .map(([prayer, time]) => {
                       const isPrayerFajr = prayer === 'Fajr';
                       const shouldHighlight = isPrayerFajr && isNearFajr;
-                      
-                      // Format the time and add tomorrow label for Fajr
                       const formattedTime = formatPrayerTime(time);
                       const displayTime = isPrayerFajr ? `${formattedTime} (Tomorrow)` : formattedTime;
                       
@@ -385,6 +363,9 @@ function App() {
             <div>
               <label htmlFor="bedTime" className="block text-sm font-medium text-amber-700 mb-2">
                 I plan to go to bed at:
+                <span className="ml-2 text-amber-600 text-xs font-normal">
+                  (includes 15-minute buffer to fall asleep)
+                </span>
               </label>
               <input
                 type="time"
@@ -393,6 +374,9 @@ function App() {
                 onChange={handleBedTimeChange}
                 className="w-full bg-white/60 text-slate-800 px-4 py-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 focus:outline-none"
               />
+              <p className="mt-2 text-sm text-amber-600">
+                Actual sleep start: {formatTime(new Date(bedTime.getTime() + 15 * 60000))}
+              </p>
             </div>
           </div>
         </div>
@@ -437,15 +421,8 @@ function App() {
               const timeToFajr = fajrTime ? fajrTime.getTime() - cycle.wakeTime.getTime() : 0;
               const minutesToFajr = Math.floor(timeToFajr / MILLISECONDS_IN_MINUTE);
               
-              console.log(`Wake time: ${formatTime(cycle.wakeTime)}`);
-              console.log(`Fajr time: ${fajrTime ? formatTime(fajrTime) : 'Not set'}`);
-              console.log(`Minutes to Fajr: ${minutesToFajr}`);
-              
-              // Updated more flexible logic
               const isRecommendedForFajr = fajrTime && 
-                // Find the cycle that wakes you up between 20-90 minutes before Fajr
                 (minutesToFajr >= 20 && minutesToFajr <= 90) &&
-                // Prefer cycles closer to 45 minutes before Fajr
                 (Math.abs(minutesToFajr - 45) < 30);
               
               const isWarningTime = fajrTime && 
@@ -455,8 +432,6 @@ function App() {
               const isLateWakeup = fajrTime && 
                 cycle.wakeTime.getTime() >= fajrTime.getTime();
 
-              console.log(`Cycle ${cycle.cycles}: isRecommended=${isRecommendedForFajr}, minutesToFajr=${minutesToFajr}`);
-              
               return (
                 <div 
                   key={cycle.cycles}
@@ -491,7 +466,7 @@ function App() {
                         ? 'text-teal-600' 
                         : 'text-amber-600'
                     }`}>
-                      {cycle.cycles} cycles ({cycle.duration} hours)
+                      {cycle.cycles} cycles ({cycle.totalDuration.toFixed(1)} hours total)
                     </p>
                     {isRecommendedForFajr && (
                       <span className="inline-block mt-2 px-4 py-1.5 bg-teal-100/90 text-teal-800 text-xs font-medium rounded-full border border-teal-300 shadow-sm shadow-teal-200/50 ring-1 ring-teal-400/30">
@@ -519,7 +494,11 @@ function App() {
           <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 text-sm text-slate-600 border border-amber-200">
             <div className="flex items-start gap-2">
               <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-amber-600 mt-0.5" />
-              <p>Each sleep cycle is 90 minutes. Green times give you 20-90 minutes before Fajr, perfect for Suhoor.</p>
+              <p>
+                Includes 15-minute buffer to account for time to fall asleep. 
+                Each sleep cycle is 90 minutes. Green times give you 20-90 minutes 
+                before Fajr, perfect for Suhoor.
+              </p>
             </div>
           </div>
 
