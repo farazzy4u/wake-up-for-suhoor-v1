@@ -181,6 +181,13 @@ function formatTime(date: Date): string {
   });
 }
 
+function formatDuration(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 function formatPrayerTime(timeStr: string): string {
   const [hours, minutes] = timeStr.split(':').map(Number);
   const date = new Date();
@@ -720,7 +727,7 @@ function App() {
                         ? 'text-teal-600' 
                         : 'text-[#d4af37]'
                     }`}>
-                      {cycle.cycles} cycles ({cycle.totalDuration.toFixed(1)} hours total)
+                      {cycle.cycles} cycles ({formatDuration(cycle.totalDuration)} total)
                     </p>
                     <p className={`text-xs ${
                       isLateWakeup
