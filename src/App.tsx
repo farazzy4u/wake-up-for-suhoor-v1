@@ -821,7 +821,7 @@ function App() {
                   <li>Keep bedtime and wake time as regular as you can, even on non-fasting days — regularity strengthens your body clock.</li>
                   <li>Wind down 30 minutes before bed: dim the lights, put screens down, and leave heavy news and work for tomorrow.</li>
                   <li>Keep the room cool, dark, and quiet — around 65°F / 18°C if you can — so street light or early light does not wake you early.</li>
-                  <li>Cut caffeine off in the early afternoon. Caffeine blocks sleep pressure and can fragment deep sleep, even when you still fall asleep.</li>
+                  <li>After Iftar, keep caffeine low. Caffeine blocks sleep pressure and can fragment deep sleep, even when you still fall asleep — so try smaller amounts, or non-caffeinated or decaf versions, especially close to bedtime.</li>
                   <li>Keep Suhoor and Iftar balanced, not too heavy, spicy, or sugary right before bed. Spread water between Iftar and Suhoor instead of one big rush at Suhoor.</li>
                   <li>After Fajr, get morning light and a short walk. It helps shake off grogginess and anchors the next night's sleep.</li>
                   <li>If you nap in the day, keep it short — about 20–30 minutes — or a full cycle, and not too late, so night sleep still comes easily.</li>
