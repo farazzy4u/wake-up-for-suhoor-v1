@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Clock, MapPin, Loader2, Star } from 'lucide-react';
 import moonIcon from '@assets/moon.svg';
 import lanternIcon from '@assets/lantern.svg';
@@ -31,6 +31,20 @@ interface PrayerTimes {
 interface Location {
   city: string;
   country: string;
+  state?: string;
+  latitude?: number;
+  longitude?: number;
+  displayName?: string;
+}
+
+interface PlaceSuggestion {
+  placeId: number;
+  city: string;
+  state?: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  displayName: string;
 }
 
 interface HijriDate {
@@ -53,13 +67,61 @@ function loadStoredLocation(): Location {
     if (stored) {
       const parsed = JSON.parse(stored) as Partial<Location>;
       if (parsed.city && parsed.country) {
-        return { city: parsed.city, country: parsed.country };
+        return {
+          city: parsed.city,
+          country: parsed.country,
+          state: parsed.state,
+          latitude: parsed.latitude,
+          longitude: parsed.longitude,
+          displayName: parsed.displayName,
+        };
       }
     }
   } catch {
     // Ignore storage errors and use the defaults below.
   }
-  return { city: 'Chicago', country: 'USA' };
+  return { city: 'Chicago', country: 'USA', displayName: 'Chicago, USA' };
+}
+
+function placeDisplayName(city: string, state: string | undefined, country: string): string {
+  return [city, state, country].filter(Boolean).join(', ');
+}
+
+// Nominatim place search, filtered to places (not streets or businesses)
+// so a name like Dublin returns every Dublin, each with its own
+// state/country line for the user to pick from. Coordinates stay hidden:
+// they are only used in the background for the prayer-times call.
+async function searchPlaces(query: string, signal: AbortSignal): Promise<PlaceSuggestion[]> {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=10&q=${encodeURIComponent(query)}`,
+    { signal, headers: { Accept: 'application/json' } }
+  );
+  const data = await response.json();
+  if (!Array.isArray(data)) return [];
+  const seen = new Set<string>();
+  const suggestions: PlaceSuggestion[] = [];
+  for (const item of data) {
+    const address = item.address ?? {};
+    const city = address.city || address.town || address.village || address.municipality || address.county;
+    const country = address.country;
+    if (!city || !country) continue;
+    const latitude = Number(item.lat);
+    const longitude = Number(item.lon);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
+    const key = `${city}|${address.state ?? ''}|${country}|${latitude}|${longitude}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    suggestions.push({
+      placeId: Number(item.place_id),
+      city,
+      state: address.state,
+      country,
+      latitude,
+      longitude,
+      displayName: placeDisplayName(city, address.state, country),
+    });
+  }
+  return suggestions;
 }
 
 function loadStoredBedTime(): Date {
@@ -138,6 +200,14 @@ function App() {
   const [bedTime, setBedTime] = useState<Date>(loadStoredBedTime);
 
   const [location, setLocation] = useState<Location>(loadStoredLocation);
+  const [searchQuery, setSearchQuery] = useState(
+    () => loadStoredLocation().displayName ?? 'Chicago, USA'
+  );
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [loading, setLoading] = useState(false);
@@ -157,6 +227,43 @@ function App() {
       // Storage is a convenience, not a requirement.
     }
   }, [location]);
+
+  // Smart search: wait 400ms after the user stops typing before
+  // calling Nominatim (free, no key, no cost). That keeps us well
+  // inside Nominatim's 1-request-per-second policy while the list
+  // still narrows with every extra letter typed.
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 3) {
+      setSuggestions([]);
+      setSearching(false);
+      return;
+    }
+    // Don't re-search the place the user already picked.
+    if (query === (location.displayName ?? placeDisplayName(location.city, location.state, location.country))) {
+      searchAbortRef.current?.abort();
+      setSuggestions([]);
+      return;
+    }
+    setSearching(true);
+    setSearchError(null);
+    const timer = setTimeout(async () => {
+      searchAbortRef.current?.abort();
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+      try {
+        setSuggestions(await searchPlaces(query, controller.signal));
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          setSearchError('Place search is unavailable right now. Please try again.');
+          setSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setSearching(false);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery, location]);
 
   useEffect(() => {
     try {
@@ -180,9 +287,10 @@ function App() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(
-          `https://api.aladhan.com/v1/timingsByCity?city=${location.city}&country=${location.country}&method=2`
-        );
+        const timingsUrl = location.latitude !== undefined && location.longitude !== undefined
+          ? `https://api.aladhan.com/v1/timings?latitude=${location.latitude}&longitude=${location.longitude}&method=2`
+          : `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(location.city)}&country=${encodeURIComponent(location.country)}&method=2`;
+        const response = await fetch(timingsUrl);
         const data = await response.json();
         
         if (data.code === 200 && data.status === 'OK') {
@@ -255,13 +363,18 @@ function App() {
     }
   };
 
-  const handleLocationSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+  const handlePlaceSelect = (place: PlaceSuggestion) => {
     setLocation({
-      city: formData.get('city') as string,
-      country: formData.get('country') as string
+      city: place.city,
+      state: place.state,
+      country: place.country,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      displayName: place.displayName,
     });
+    setSearchQuery(place.displayName);
+    setSuggestions([]);
+    setSearchOpen(false);
   };
 
   const getTomorrowDate = () => {
@@ -321,41 +434,63 @@ function App() {
               <MapPin className="w-5 h-5 text-[#d4af37]" />
               <h2 className="text-xl font-semibold text-[#d4af37]">Location Settings</h2>
             </div>
-            <form onSubmit={handleLocationSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-[#e9dcc3] mb-2">
-                  City
+            <div className="space-y-4">
+              <div className="relative">
+                <label htmlFor="place-search" className="block text-sm font-medium text-[#e9dcc3] mb-2">
+                  Where are you?
                 </label>
                 <input
                   type="text"
-                  id="city"
-                  name="city"
-                  defaultValue={location.city}
+                  id="place-search"
+                  value={searchQuery}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    setSearchOpen(true);
+                  }}
+                  onFocus={() => setSearchOpen(true)}
+                  onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
+                  placeholder="Type a city, e.g. Dublin…"
+                  autoComplete="off"
                   className="w-full bg-[#071e1b]/70 text-[#f5f0e6] px-4 py-2 rounded-lg border border-[#d4af37]/40 focus:ring-2 focus:ring-[#d4af37] focus:border-[#d4af37] focus:outline-none"
                 />
+                {searchOpen && (searching || suggestions.length > 0 || searchError || searchQuery.trim().length >= 3) && (
+                  <div className="absolute z-10 mt-2 w-full rounded-lg border border-[#d4af37]/40 bg-[#0f2a2e] shadow-lg overflow-hidden">
+                    {searching && (
+                      <p className="px-4 py-3 text-sm text-[#e9dcc3]/80">Searching places…</p>
+                    )}
+                    {!searching && searchError && (
+                      <p className="px-4 py-3 text-sm text-[#e9dcc3]/80">{searchError}</p>
+                    )}
+                    {!searching && !searchError && suggestions.length === 0 && searchQuery.trim().length >= 3 && (
+                      <p className="px-4 py-3 text-sm text-[#e9dcc3]/80">
+                        No places found. Try a larger nearby city.
+                      </p>
+                    )}
+                    {!searching && suggestions.map((place) => (
+                      <button
+                        key={place.placeId}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => handlePlaceSelect(place)}
+                        className="block w-full text-left px-4 py-3 hover:bg-[#122f28] transition-colors"
+                      >
+                        <span className="block text-sm font-medium text-[#f5f0e6]">{place.city}</span>
+                        <span className="block text-xs text-[#e9dcc3]/70">
+                          {[place.state, place.country].filter(Boolean).join(', ')}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-[#e9dcc3] mb-2">
-                  Country
-                </label>
-                <input
-                  type="text"
-                  id="country"
-                  name="country"
-                  defaultValue={location.country}
-                  className="w-full bg-[#071e1b]/70 text-[#f5f0e6] px-4 py-2 rounded-lg border border-[#d4af37]/40 focus:ring-2 focus:ring-[#d4af37] focus:border-[#d4af37] focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-[#b8962e] to-[#e8c468] hover:from-[#a88428] hover:to-[#f5d78e] text-[#1a1408] font-medium py-2 px-4 rounded-lg transition-colors"
-              >
-                Update Location
-              </button>
-              <p className="text-xs text-[#d4af37]/80">
-                Saved on this device, so you only enter it once.
+              <p className="text-sm text-[#e9dcc3]">
+                Showing times for: <span className="font-medium text-[#f5f0e6]">{location.displayName ?? placeDisplayName(location.city, location.state, location.country)}</span>
               </p>
-            </form>
+              <p className="text-xs text-[#d4af37]/80">
+                Pick a place from the list to update times. Saved on this device, so you only enter it once.
+                Place search is free, by Nominatim / © OpenStreetMap contributors.
+              </p>
+            </div>
           </div>
 
           <div className="bg-[#122f28]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-[#d4af37]/40 hover:border-[#d4af37] transition-colors">
