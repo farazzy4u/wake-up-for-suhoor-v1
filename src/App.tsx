@@ -42,6 +42,41 @@ interface HijriDate {
 
 const MILLISECONDS_IN_MINUTE = 60000;
 
+// Saved on this device, so a visitor only has to enter their city once.
+// Anything unparseable (or unavailable, e.g. private browsing) falls back
+// to the original Chicago defaults instead of breaking the page.
+function loadStoredLocation(): Location {
+  try {
+    const stored = localStorage.getItem('suhoor-location');
+    if (stored) {
+      const parsed = JSON.parse(stored) as Partial<Location>;
+      if (parsed.city && parsed.country) {
+        return { city: parsed.city, country: parsed.country };
+      }
+    }
+  } catch {
+    // Ignore storage errors and use the defaults below.
+  }
+  return { city: 'Chicago', country: 'USA' };
+}
+
+function loadStoredBedTime(): Date {
+  const now = new Date();
+  now.setHours(22, 0, 0, 0);
+  try {
+    const stored = localStorage.getItem('suhoor-bedtime');
+    if (stored) {
+      const [hours, minutes] = stored.split(':').map(Number);
+      if (Number.isFinite(hours) && Number.isFinite(minutes)) {
+        now.setHours(hours, minutes, 0, 0);
+      }
+    }
+  } catch {
+    // Ignore storage errors and use the 10 PM default.
+  }
+  return now;
+}
+
 function calculateSleepCycles(bedTime: Date): SleepCycle[] {
   const cycles: SleepCycle[] = [];
   const cycleLength = 90;
@@ -98,16 +133,9 @@ function formatGregorianDate(date: Date): string {
 
 function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [bedTime, setBedTime] = useState<Date>(() => {
-    const now = new Date();
-    now.setHours(22, 0, 0, 0);
-    return now;
-  });
+  const [bedTime, setBedTime] = useState<Date>(loadStoredBedTime);
 
-  const [location, setLocation] = useState<Location>({
-    city: 'Chicago',
-    country: 'USA'
-  });
+  const [location, setLocation] = useState<Location>(loadStoredLocation);
 
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [loading, setLoading] = useState(false);
@@ -117,6 +145,25 @@ function App() {
   } | null>(null);
 
   const [hijriDate, setHijriDate] = useState<HijriDate | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Remember the visitor's choices on this device.
+  useEffect(() => {
+    try {
+      localStorage.setItem('suhoor-location', JSON.stringify(location));
+    } catch {
+      // Storage is a convenience, not a requirement.
+    }
+  }, [location]);
+
+  useEffect(() => {
+    try {
+      const time = `${bedTime.getHours().toString().padStart(2, '0')}:${bedTime.getMinutes().toString().padStart(2, '0')}`;
+      localStorage.setItem('suhoor-bedtime', time);
+    } catch {
+      // Storage is a convenience, not a requirement.
+    }
+  }, [bedTime]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -170,7 +217,7 @@ function App() {
     }
 
     fetchPrayerTimes();
-  }, [location]);
+  }, [location, retryCount]);
 
   useEffect(() => {
     async function fetchHijriDate() {
@@ -295,6 +342,9 @@ function App() {
               >
                 Update Location
               </button>
+              <p className="text-xs text-amber-600/80">
+                Saved on this device, so you only enter it once.
+              </p>
             </form>
           </div>
 
@@ -318,6 +368,13 @@ function App() {
                         <li>Try using a major city nearby</li>
                       </ul>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setRetryCount((count) => count + 1)}
+                      className="mt-3 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Try again
+                    </button>
                   </div>
                 </div>
               </div>
@@ -421,9 +478,12 @@ function App() {
               const timeToFajr = fajrTime ? fajrTime.getTime() - cycle.wakeTime.getTime() : 0;
               const minutesToFajr = Math.floor(timeToFajr / MILLISECONDS_IN_MINUTE);
               
-              const isRecommendedForFajr = fajrTime && 
-                (minutesToFajr >= 20 && minutesToFajr <= 90) &&
-                (Math.abs(minutesToFajr - 45) < 30);
+              // Match the copy on the page: green means 20-90 minutes
+              // before Fajr. The old check also required being within
+              // 30 minutes of 45, which quietly shrank the green
+              // window to about 20-75 minutes.
+              const isRecommendedForFajr = fajrTime &&
+                minutesToFajr >= 20 && minutesToFajr <= 90;
               
               const isWarningTime = fajrTime && 
                 timeToFajr > 0 && 
@@ -468,6 +528,15 @@ function App() {
                     }`}>
                       {cycle.cycles} cycles ({cycle.totalDuration.toFixed(1)} hours total)
                     </p>
+                    {fajrTime && (
+                      <p className="text-xs text-slate-500">
+                        {minutesToFajr > 0
+                          ? `${minutesToFajr} min before Fajr`
+                          : minutesToFajr === 0
+                            ? 'At Fajr'
+                            : `${-minutesToFajr} min after Fajr`}
+                      </p>
+                    )}
                     {isRecommendedForFajr && (
                       <span className="inline-block mt-2 px-4 py-1.5 bg-teal-100/90 text-teal-800 text-xs font-medium rounded-full border border-teal-300 shadow-sm shadow-teal-200/50 ring-1 ring-teal-400/30">
                         ✨ Recommended for Fajr
