@@ -805,6 +805,31 @@ function App() {
               </div>
             </div>
           </div>
+          <div className="bg-[#071e1b]/70 backdrop-blur-sm rounded-lg p-4 border border-[#d4af37]/40">
+            <div className="flex items-start gap-2 mb-3">
+              <div className="flex-shrink-0">
+                <Clock className="w-4 h-4 text-[#d4af37] mt-1" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-[#d4af37]">🌙 Set yourself up for a good night's sleep</h3>
+                <p className="text-sm text-[#e9dcc3]/80">
+                  A good wake-up starts the night before. These are general
+                  habits, not medical advice, and they work best together,
+                  not as a single trick.
+                </p>
+                <ul className="text-sm text-[#e9dcc3]/80 space-y-2 list-disc list-inside">
+                  <li>Keep bedtime and wake time as regular as you can, even on non-fasting days — regularity strengthens your body clock.</li>
+                  <li>Wind down 30 minutes before bed: dim the lights, put screens down, and leave heavy news and work for tomorrow.</li>
+                  <li>Keep the room cool, dark, and quiet — around 65°F / 18°C if you can — so street light or early light does not wake you early.</li>
+                  <li>Cut caffeine off in the early afternoon. Caffeine blocks sleep pressure and can fragment deep sleep, even when you still fall asleep.</li>
+                  <li>Keep Suhoor and Iftar balanced, not too heavy, spicy, or sugary right before bed. Spread water between Iftar and Suhoor instead of one big rush at Suhoor.</li>
+                  <li>After Fajr, get morning light and a short walk. It helps shake off grogginess and anchors the next night's sleep.</li>
+                  <li>If you nap in the day, keep it short — about 20–30 minutes — or a full cycle, and not too late, so night sleep still comes easily.</li>
+                  <li>When you wake, turn the light on, drink water, and move. No snooze — grogginess fades faster with light and movement than with lying back down.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
