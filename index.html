@@ -5,6 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/moon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wake Up For Suhoor</title>
+    <!-- Privacy-friendly analytics (Umami Cloud, no cookies). Website ID from the Umami dashboard.
+         Tester opt-out: opening the page once with ?notrack in the URL sets
+         localStorage 'umami.disabled' for this origin, so later visits from
+         that browser are not counted. No UI, no data sent. -->
+    <script>
+      // Runs before the deferred Umami script: a ?notrack visit opts this
+      // browser out of all future tracking on this origin.
+      if (new URLSearchParams(window.location.search).has('notrack')) {
+        try { localStorage.setItem('umami.disabled', '1'); } catch (e) {}
+      }
+    </script>
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="4bb69b40-5799-4aa4-87ca-7e4d8f89e870"></script>
   </head>
   <body>
     <div id="root"></div>
