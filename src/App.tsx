@@ -124,6 +124,16 @@ async function searchPlaces(query: string, signal: AbortSignal): Promise<PlaceSu
   return suggestions;
 }
 
+function loadStoredSchool(): number {
+  try {
+    const stored = localStorage.getItem('suhoor-school');
+    if (stored === '1') return 1;
+  } catch {
+    // Ignore storage errors and use the Shafi default below.
+  }
+  return 0;
+}
+
 function loadStoredBedTime(): Date {
   const now = new Date();
   now.setHours(22, 0, 0, 0);
@@ -200,6 +210,7 @@ function App() {
   const [bedTime, setBedTime] = useState<Date>(loadStoredBedTime);
 
   const [location, setLocation] = useState<Location>(loadStoredLocation);
+  const [school, setSchool] = useState<number>(loadStoredSchool);
   const [searchQuery, setSearchQuery] = useState(
     () => loadStoredLocation().displayName ?? 'Chicago, USA'
   );
@@ -267,6 +278,14 @@ function App() {
 
   useEffect(() => {
     try {
+      localStorage.setItem('suhoor-school', String(school));
+    } catch {
+      // Storage is a convenience, not a requirement.
+    }
+  }, [school]);
+
+  useEffect(() => {
+    try {
       const time = `${bedTime.getHours().toString().padStart(2, '0')}:${bedTime.getMinutes().toString().padStart(2, '0')}`;
       localStorage.setItem('suhoor-bedtime', time);
     } catch {
@@ -288,8 +307,8 @@ function App() {
       setError(null);
       try {
         const timingsUrl = location.latitude !== undefined && location.longitude !== undefined
-          ? `https://api.aladhan.com/v1/timings?latitude=${location.latitude}&longitude=${location.longitude}&method=2`
-          : `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(location.city)}&country=${encodeURIComponent(location.country)}&method=2`;
+          ? `https://api.aladhan.com/v1/timings?latitude=${location.latitude}&longitude=${location.longitude}&method=2&school=${school}`
+          : `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(location.city)}&country=${encodeURIComponent(location.country)}&method=2&school=${school}`;
         const response = await fetch(timingsUrl);
         const data = await response.json();
         
@@ -327,7 +346,7 @@ function App() {
     }
 
     fetchPrayerTimes();
-  }, [location, retryCount]);
+  }, [location, retryCount, school]);
 
   useEffect(() => {
     async function fetchHijriDate() {
@@ -494,7 +513,37 @@ function App() {
           </div>
 
           <div className="bg-[#122f28]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-[#d4af37]/40 hover:border-[#d4af37] transition-colors">
-            <h2 className="text-xl font-semibold mb-6 text-[#d4af37]">Prayer Times</h2>
+            <h2 className="text-xl font-semibold mb-4 text-[#d4af37]">Prayer Times</h2>
+            <fieldset className="mb-6">
+              <legend className="block text-sm font-medium text-[#e9dcc3] mb-2">Asr timing</legend>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm text-[#e9dcc3] cursor-pointer">
+                  <input
+                    type="radio"
+                    name="asr-school"
+                    value="0"
+                    checked={school === 0}
+                    onChange={() => setSchool(0)}
+                    className="accent-[#d4af37]"
+                  />
+                  Shafi
+                </label>
+                <label className="flex items-center gap-2 text-sm text-[#e9dcc3] cursor-pointer">
+                  <input
+                    type="radio"
+                    name="asr-school"
+                    value="1"
+                    checked={school === 1}
+                    onChange={() => setSchool(1)}
+                    className="accent-[#d4af37]"
+                  />
+                  Hanafi
+                </label>
+              </div>
+              <p className="mt-2 text-xs text-[#e9dcc3]/60">
+                ISNA method for all prayers. Hanafi only moves Asr later; Fajr and Suhoor times do not change. Saved on this device.
+              </p>
+            </fieldset>
             {loading ? (
               <div className="flex items-center justify-center h-[200px]">
                 <Loader2 className="w-8 h-8 animate-spin text-[#d4af37]" />
@@ -526,7 +575,7 @@ function App() {
             ) : prayerTimes ? (
               <div className="space-y-4">
                 <div className="text-sm text-[#e9dcc3]/60 mb-4">
-                  <p>Calculation Method: {prayerTimes.method.name}</p>
+                  <p>Calculation Method: {prayerTimes.method.name} • Asr: {school === 1 ? 'Hanafi' : 'Shafi'}</p>
                   <p>Timezone: {prayerTimes.timezone}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
