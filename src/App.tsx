@@ -188,6 +188,18 @@ function formatDuration(hours: number): string {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Duration in minutes, quantized to hours + minutes so a human does not
+// have to divide a triple-digit minute count in their head (289 min ->
+// 4h 49m, not 289 min). Written with h/m, not a colon, so it cannot be
+// mistaken for a clock time like 4:49 AM. Under 60 minutes stays as minutes.
+function formatMinutesDuration(totalMinutes: number): string {
+  const abs = Math.abs(totalMinutes);
+  if (abs < 60) return `${abs} min`;
+  const h = Math.floor(abs / 60);
+  const m = abs % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 // Privacy-friendly analytics: anonymous event names only, no values.
 // No city, coordinates, bedtime, or wake time is ever sent. If Umami is
 // not loaded (or the website ID is still a placeholder), this is a no-op.
@@ -771,10 +783,10 @@ function App() {
                           : 'text-[#e9dcc3]/60'
                       }`}>
                         {minutesToFajr > 0
-                          ? `${minutesToFajr} min before Fajr`
+                          ? `${formatMinutesDuration(minutesToFajr)} before Fajr`
                           : minutesToFajr === 0
                             ? 'At Fajr'
-                            : `${-minutesToFajr} min after Fajr`}
+                            : `${formatMinutesDuration(minutesToFajr)} after Fajr`}
                       </p>
                     )}
                     {isRecommendedForFajr && (
