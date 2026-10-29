@@ -335,7 +335,7 @@ function App() {
             message: 'Could not find prayer times for this location. Please verify city and country.'
           });
         }
-      } catch (err) {
+      } catch {
         setError({
           type: 'GENERAL',
           message: 'Failed to fetch prayer times. Please check your internet connection.'
@@ -681,7 +681,7 @@ function App() {
               
               const isWarningTime = fajrTime && 
                 timeToFajr > 0 && 
-                timeToFajr <= 20 * MILLISECONDS_IN_MINUTE;
+                timeToFajr < 20 * MILLISECONDS_IN_MINUTE;
                 
               const isLateWakeup = fajrTime && 
                 cycle.wakeTime.getTime() >= fajrTime.getTime();
@@ -722,11 +722,27 @@ function App() {
                     }`}>
                       {cycle.cycles} cycles ({cycle.totalDuration.toFixed(1)} hours total)
                     </p>
-                    <p className="text-xs text-[#e9dcc3]/70">
+                    <p className={`text-xs ${
+                      isLateWakeup
+                        ? 'text-red-700'
+                        : isWarningTime
+                        ? 'text-yellow-800'
+                        : isRecommendedForFajr
+                        ? 'text-teal-700'
+                        : 'text-[#e9dcc3]/70'
+                    }`}>
                       {cycle.cycles >= 5 ? 'Full night' : cycle.cycles === 4 ? 'Short night' : 'Very short night'}
                     </p>
                     {fajrTime && (
-                      <p className="text-xs text-[#e9dcc3]/60">
+                      <p className={`text-xs ${
+                        isLateWakeup
+                          ? 'text-red-600'
+                          : isWarningTime
+                          ? 'text-yellow-800'
+                          : isRecommendedForFajr
+                          ? 'text-teal-700'
+                          : 'text-[#e9dcc3]/60'
+                      }`}>
                         {minutesToFajr > 0
                           ? `${minutesToFajr} min before Fajr`
                           : minutesToFajr === 0
@@ -786,7 +802,7 @@ function App() {
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#d4af37]">About Sleep Cycles</h3>
                 <p className="text-sm text-[#e9dcc3]/80">
-                  Sleep cycles typically last 90-120 minutes, with each cycle consisting of different stages of sleep. 
+                  Sleep cycles typically last 70-120 minutes, with each cycle consisting of different stages of sleep. The calculator uses an average of 90 minutes for planning. 
                   Waking up at the end of a cycle helps you feel more refreshed.
                 </p>
                 <div className="pt-2 space-y-1">
