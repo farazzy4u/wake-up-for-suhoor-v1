@@ -181,6 +181,13 @@ function formatTime(date: Date): string {
   });
 }
 
+function formatDuration(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 function formatPrayerTime(timeStr: string): string {
   const [hours, minutes] = timeStr.split(':').map(Number);
   const date = new Date();
@@ -335,7 +342,7 @@ function App() {
             message: 'Could not find prayer times for this location. Please verify city and country.'
           });
         }
-      } catch (err) {
+      } catch {
         setError({
           type: 'GENERAL',
           message: 'Failed to fetch prayer times. Please check your internet connection.'
@@ -636,7 +643,7 @@ function App() {
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <Star className="w-5 h-5 text-[#d4af37]" />
-              <h2 className="text-xl font-semibold text-[#d4af37]">Recommended Wake-up Times</h2>
+              <h2 className="text-xl font-semibold text-[#d4af37]">Suggested Wake-up Times (Estimates)</h2>
             </div>
             {fajrTime && (
               <div className="mt-2 p-3 bg-[#071e1b]/70 rounded-lg border border-[#d4af37]/40">
@@ -654,11 +661,11 @@ function App() {
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full bg-teal-500"></div>
-                <span className="text-sm font-medium text-[#e9dcc3]">✨ Perfect for Suhoor</span>
+                <span className="text-sm font-medium text-[#e9dcc3]">✨ Suggested Suhoor window</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full bg-yellow-600"></div>
-                <span className="text-sm font-medium text-[#e9dcc3]">⚡️ Limited Time</span>
+                <span className="text-sm font-medium text-[#e9dcc3]">⚡️ Tight Suhoor window</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full bg-red-500"></div>
@@ -681,7 +688,7 @@ function App() {
               
               const isWarningTime = fajrTime && 
                 timeToFajr > 0 && 
-                timeToFajr <= 20 * MILLISECONDS_IN_MINUTE;
+                timeToFajr < 20 * MILLISECONDS_IN_MINUTE;
                 
               const isLateWakeup = fajrTime && 
                 cycle.wakeTime.getTime() >= fajrTime.getTime();
@@ -720,10 +727,29 @@ function App() {
                         ? 'text-teal-600' 
                         : 'text-[#d4af37]'
                     }`}>
-                      {cycle.cycles} cycles ({cycle.totalDuration.toFixed(1)} hours total)
+                      {cycle.cycles} cycles ({formatDuration(cycle.totalDuration)} total)
+                    </p>
+                    <p className={`text-xs ${
+                      isLateWakeup
+                        ? 'text-red-700'
+                        : isWarningTime
+                        ? 'text-yellow-800'
+                        : isRecommendedForFajr
+                        ? 'text-teal-700'
+                        : 'text-[#e9dcc3]/70'
+                    }`}>
+                      {cycle.cycles >= 5 ? 'Full night' : cycle.cycles === 4 ? 'Short night' : 'Very short night'}
                     </p>
                     {fajrTime && (
-                      <p className="text-xs text-[#e9dcc3]/60">
+                      <p className={`text-xs ${
+                        isLateWakeup
+                          ? 'text-red-600'
+                          : isWarningTime
+                          ? 'text-yellow-800'
+                          : isRecommendedForFajr
+                          ? 'text-teal-700'
+                          : 'text-[#e9dcc3]/60'
+                      }`}>
                         {minutesToFajr > 0
                           ? `${minutesToFajr} min before Fajr`
                           : minutesToFajr === 0
@@ -733,7 +759,7 @@ function App() {
                     )}
                     {isRecommendedForFajr && (
                       <span className="inline-block mt-2 px-4 py-1.5 bg-teal-100/90 text-teal-800 text-xs font-medium rounded-full border border-teal-300 shadow-sm shadow-teal-200/50 ring-1 ring-teal-400/30">
-                        ✨ Recommended for Fajr
+                        ✨ Suggested for Suhoor
                       </span>
                     )}
                     {isWarningTime && (
@@ -754,13 +780,23 @@ function App() {
         </div>
 
         <div className="mt-4 space-y-4">
+          <div className="bg-[#071e1b]/70 backdrop-blur-sm rounded-lg p-4 border border-[#d4af37]/40">
+            <p className="text-sm text-[#e9dcc3]/80">
+              A Suhoor planning aid, not a medical or certified sleep app.
+              Wake-up times are estimates based on average 90-minute cycles
+              and a 15-minute fall-asleep buffer. They are suggestions to
+              help you wake in time for Suhoor and Fajr feeling less groggy,
+              not a guarantee. If you regularly wake groggy, snore heavily,
+              or struggle to stay asleep, please speak to a clinician.
+            </p>
+          </div>
           <div className="bg-[#071e1b]/70 backdrop-blur-sm rounded-lg p-4 text-sm text-[#e9dcc3]/80 border border-[#d4af37]/40">
             <div className="flex items-start gap-2">
               <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-[#d4af37] mt-0.5" />
               <p>
                 Includes 15-minute buffer to account for time to fall asleep. 
-                Each sleep cycle is 90 minutes. Green times give you 20-90 minutes 
-                before Fajr, perfect for Suhoor.
+                Each sleep cycle is about 90 minutes, but real cycles vary roughly 70-120 minutes, so these are estimates, not exact times. Green times give you 20-90 minutes 
+                before Fajr, a suggested window for Suhoor.
               </p>
             </div>
           </div>
@@ -773,7 +809,7 @@ function App() {
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#d4af37]">About Sleep Cycles</h3>
                 <p className="text-sm text-[#e9dcc3]/80">
-                  Sleep cycles typically last 90-120 minutes, with each cycle consisting of different stages of sleep. 
+                  Sleep cycles typically last 70-120 minutes, with each cycle consisting of different stages of sleep. The calculator uses an average of 90 minutes for planning. 
                   Waking up at the end of a cycle helps you feel more refreshed.
                 </p>
                 <div className="pt-2 space-y-1">
@@ -789,6 +825,31 @@ function App() {
                     </li>
                   </ul>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-[#071e1b]/70 backdrop-blur-sm rounded-lg p-4 border border-[#d4af37]/40">
+            <div className="flex items-start gap-2 mb-3">
+              <div className="flex-shrink-0">
+                <Clock className="w-4 h-4 text-[#d4af37] mt-1" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-[#d4af37]">🌙 Set yourself up for a good night's sleep</h3>
+                <p className="text-sm text-[#e9dcc3]/80">
+                  A good wake-up starts the night before. These are general
+                  habits, not medical advice, and they work best together,
+                  not as a single trick.
+                </p>
+                <ul className="text-sm text-[#e9dcc3]/80 space-y-2 list-disc list-inside">
+                  <li>Keep bedtime and wake time as regular as you can, even on non-fasting days — regularity strengthens your body clock.</li>
+                  <li>Wind down 30 minutes before bed: dim the lights, put screens down, and leave heavy news and work for tomorrow.</li>
+                  <li>Keep the room cool, dark, and quiet — around 65°F / 18°C if you can — so street light or early light does not wake you early.</li>
+                  <li>After Iftar, keep caffeine low. Caffeine blocks sleep pressure and can fragment deep sleep, even when you still fall asleep — so try smaller amounts, or non-caffeinated or decaf versions, especially close to bedtime.</li>
+                  <li>Keep Suhoor and Iftar balanced, not too heavy, spicy, or sugary right before bed. Spread water between Iftar and Suhoor instead of one big rush at Suhoor.</li>
+                  <li>After Fajr, get morning light and a short walk. It helps shake off grogginess and anchors the next night's sleep.</li>
+                  <li>If you nap in the day, keep it short — about 20–30 minutes — or a full cycle, and not too late, so night sleep still comes easily.</li>
+                  <li>When you wake, turn the light on, drink water, and move. No snooze — grogginess fades faster with light and movement than with lying back down.</li>
+                </ul>
               </div>
             </div>
           </div>
