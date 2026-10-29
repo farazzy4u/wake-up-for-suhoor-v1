@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Clock, MapPin, Loader2, Star } from 'lucide-react';
 import moonIcon from '@assets/moon.svg';
+import lanternIcon from '@assets/lantern.svg';
+import datesIcon from '@assets/dates.svg';
 
 interface SleepCycle {
   cycles: number;
@@ -284,39 +286,44 @@ function App() {
   const moonIconPath = moonIcon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#ffe9c4] via-[#ffd9a0] to-[#ffb877] text-[#3d2b1f] p-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#071e1b] via-[#0d332a] to-[#14231a] text-[#f5f0e6] p-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <img src={moonIconPath} alt="Moon" className="w-8 h-8 text-orange-700" />
-            <h1 className="text-3xl font-bold text-orange-900">Wake Up For Suhoor</h1>
-            <img src={moonIconPath} alt="Moon" className="w-8 h-8 text-orange-700" />
+            <img src={lanternIcon} alt="Moroccan lantern" className="w-10 h-10" />
+            <h1 className="text-4xl font-serif font-bold tracking-wide text-[#d4af37]">Wake Up For Suhoor</h1>
+            <img src={lanternIcon} alt="Moroccan lantern" className="w-10 h-10" />
           </div>
-          <p className="text-orange-900/90 text-lg mb-2">
+          <p className="text-[#d4af37]/90 text-lg mb-2">
             Plan your sleep schedule for a blessed Ramadan
           </p>
-          <p className="inline-block px-4 py-1 rounded-full bg-orange-900/10 border border-orange-300 text-orange-900 text-sm font-medium mb-2">
-            🌅 Early morning Suhoor • warm light before Fajr
+          <p className="inline-block px-4 py-1 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/40 text-[#d4af37] text-sm font-medium tracking-wide mb-2">
+            🪔 Suhoor nights • lantern light before Fajr
           </p>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <img src={datesIcon} alt="Dates for Suhoor" className="h-8 w-auto" />
+            <span className="text-[#e9dcc3] text-sm">Dates on the table, night still quiet, Fajr ahead</span>
+            <img src={datesIcon} alt="Dates for Suhoor" className="h-8 w-auto -scale-x-100" />
+          </div>
           <div className="flex flex-col items-center gap-1">
-            <p className="text-orange-800 text-sm font-medium">
+            <p className="text-[#e9dcc3] text-sm font-medium">
               {hijriDate && `${hijriDate.day} ${hijriDate.month.en} ${hijriDate.year} AH`}
             </p>
-            <p className="text-orange-700/80 text-sm">
+            <p className="text-[#d4af37]/80 text-sm">
               {formatGregorianDate(new Date())}
             </p>
           </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <div className="bg-[#fff8ec]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-orange-300 hover:border-orange-400 transition-colors">
+          <div className="bg-[#122f28]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-[#d4af37]/40 hover:border-[#d4af37] transition-colors">
             <div className="flex items-center gap-2 mb-6">
-              <MapPin className="w-5 h-5 text-orange-700" />
-              <h2 className="text-xl font-semibold text-orange-900">Location Settings</h2>
+              <MapPin className="w-5 h-5 text-[#d4af37]" />
+              <h2 className="text-xl font-semibold text-[#d4af37]">Location Settings</h2>
             </div>
             <form onSubmit={handleLocationSubmit} className="space-y-4">
               <div>
-                <label htmlFor="city" className="block text-sm font-medium text-orange-800 mb-2">
+                <label htmlFor="city" className="block text-sm font-medium text-[#e9dcc3] mb-2">
                   City
                 </label>
                 <input
@@ -324,11 +331,11 @@ function App() {
                   id="city"
                   name="city"
                   defaultValue={location.city}
-                  className="w-full bg-[#fffdf7]/80 text-[#3d2b1f] px-4 py-2 rounded-lg border border-orange-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 focus:outline-none"
+                  className="w-full bg-[#071e1b]/70 text-[#f5f0e6] px-4 py-2 rounded-lg border border-[#d4af37]/40 focus:ring-2 focus:ring-[#d4af37] focus:border-[#d4af37] focus:outline-none"
                 />
               </div>
               <div>
-                <label htmlFor="country" className="block text-sm font-medium text-orange-800 mb-2">
+                <label htmlFor="country" className="block text-sm font-medium text-[#e9dcc3] mb-2">
                   Country
                 </label>
                 <input
@@ -336,26 +343,26 @@ function App() {
                   id="country"
                   name="country"
                   defaultValue={location.country}
-                  className="w-full bg-[#fffdf7]/80 text-[#3d2b1f] px-4 py-2 rounded-lg border border-orange-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 focus:outline-none"
+                  className="w-full bg-[#071e1b]/70 text-[#f5f0e6] px-4 py-2 rounded-lg border border-[#d4af37]/40 focus:ring-2 focus:ring-[#d4af37] focus:border-[#d4af37] focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                className="w-full bg-gradient-to-r from-[#b8962e] to-[#e8c468] hover:from-[#a88428] hover:to-[#f5d78e] text-[#1a1408] font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 Update Location
               </button>
-              <p className="text-xs text-orange-700/80">
+              <p className="text-xs text-[#d4af37]/80">
                 Saved on this device, so you only enter it once.
               </p>
             </form>
           </div>
 
-          <div className="bg-[#fff8ec]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-orange-300 hover:border-orange-400 transition-colors">
-            <h2 className="text-xl font-semibold mb-6 text-orange-900">Prayer Times</h2>
+          <div className="bg-[#122f28]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-[#d4af37]/40 hover:border-[#d4af37] transition-colors">
+            <h2 className="text-xl font-semibold mb-6 text-[#d4af37]">Prayer Times</h2>
             {loading ? (
               <div className="flex items-center justify-center h-[200px]">
-                <Loader2 className="w-8 h-8 animate-spin text-orange-700" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#d4af37]" />
               </div>
             ) : error ? (
               <div className="p-4 rounded-lg bg-rose-50 border border-rose-200">
@@ -383,7 +390,7 @@ function App() {
               </div>
             ) : prayerTimes ? (
               <div className="space-y-4">
-                <div className="text-sm text-gray-400 mb-4">
+                <div className="text-sm text-[#e9dcc3]/60 mb-4">
                   <p>Calculation Method: {prayerTimes.method.name}</p>
                   <p>Timezone: {prayerTimes.timezone}</p>
                 </div>
@@ -399,11 +406,11 @@ function App() {
                       return (
                         <div
                           key={prayer}
-                          className={`bg-orange-100/80 p-3 rounded-lg ${
+                          className={`bg-[#071e1b]/70 p-3 rounded-lg ${
                             shouldHighlight ? 'ring-2 ring-red-500' : ''
                           }`}
                         >
-                          <div className="text-sm text-gray-400">{prayer}</div>
+                          <div className="text-sm text-[#e9dcc3]/60">{prayer}</div>
                           <div className={`text-lg font-semibold ${
                             shouldHighlight ? 'text-red-400' : ''
                           }`}>
@@ -418,12 +425,12 @@ function App() {
           </div>
         </div>
 
-        <div className="bg-[#fff8ec]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg mb-8 border border-orange-300 hover:border-orange-400 transition-colors">
+        <div className="bg-[#122f28]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg mb-8 border border-[#d4af37]/40 hover:border-[#d4af37] transition-colors">
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <label htmlFor="bedTime" className="block text-sm font-medium text-orange-800 mb-2">
+              <label htmlFor="bedTime" className="block text-sm font-medium text-[#e9dcc3] mb-2">
                 I plan to go to bed at:
-                <span className="ml-2 text-orange-700 text-xs font-normal">
+                <span className="ml-2 text-[#d4af37] text-xs font-normal">
                   (includes 15-minute buffer to fall asleep)
                 </span>
               </label>
@@ -432,26 +439,26 @@ function App() {
                 id="bedTime"
                 value={`${bedTime.getHours().toString().padStart(2, '0')}:${bedTime.getMinutes().toString().padStart(2, '0')}`}
                 onChange={handleBedTimeChange}
-                className="w-full bg-[#fffdf7]/80 text-[#3d2b1f] px-4 py-2 rounded-lg border border-orange-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 focus:outline-none"
+                className="w-full bg-[#071e1b]/70 text-[#f5f0e6] px-4 py-2 rounded-lg border border-[#d4af37]/40 focus:ring-2 focus:ring-[#d4af37] focus:border-[#d4af37] focus:outline-none"
               />
-              <p className="mt-2 text-sm text-orange-700">
+              <p className="mt-2 text-sm text-[#d4af37]">
                 Actual sleep start: {formatTime(new Date(bedTime.getTime() + 15 * 60000))}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#fff8ec]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-orange-300 hover:border-orange-400">
+        <div className="bg-[#122f28]/70 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-[#d4af37]/40 hover:border-[#d4af37]">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
-              <Star className="w-5 h-5 text-orange-700" />
-              <h2 className="text-xl font-semibold text-orange-900">Recommended Wake-up Times</h2>
+              <Star className="w-5 h-5 text-[#d4af37]" />
+              <h2 className="text-xl font-semibold text-[#d4af37]">Recommended Wake-up Times</h2>
             </div>
             {fajrTime && (
-              <div className="mt-2 p-3 bg-orange-100/80 rounded-lg border border-orange-300">
+              <div className="mt-2 p-3 bg-[#071e1b]/70 rounded-lg border border-[#d4af37]/40">
                 <div className="flex items-center justify-center gap-2">
-                  <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-orange-700" />
-                  <span className="text-orange-900 font-medium">
+                  <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-[#d4af37]" />
+                  <span className="text-[#d4af37] font-medium">
                     Tomorrow's Fajr: {prayerTimes?.Fajr ? formatPrayerTime(prayerTimes.Fajr) : ''}
                   </span>
                 </div>
@@ -459,19 +466,19 @@ function App() {
             )}
           </div>
 
-          <div className="mb-6 p-4 bg-slate-100/40 rounded-lg border border-slate-300">
+          <div className="mb-6 p-4 bg-[#071e1b]/60 rounded-lg border border-[#d4af37]/40">
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full bg-teal-500"></div>
-                <span className="text-sm font-medium text-slate-700">✨ Perfect for Suhoor</span>
+                <span className="text-sm font-medium text-[#e9dcc3]">✨ Perfect for Suhoor</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full bg-yellow-600"></div>
-                <span className="text-sm font-medium text-slate-700">⚡️ Limited Time</span>
+                <span className="text-sm font-medium text-[#e9dcc3]">⚡️ Limited Time</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span className="text-sm font-medium text-slate-700">😴 Missed Suhoor</span>
+                <span className="text-sm font-medium text-[#e9dcc3]">😴 Missed Suhoor</span>
               </div>
             </div>
           </div>
@@ -505,7 +512,7 @@ function App() {
                       ? 'bg-yellow-100/95 border-yellow-500'
                       : isLateWakeup
                       ? 'bg-red-50/90 border-red-300 scale-100 hover:scale-95 opacity-80 hover:opacity-70'
-                      : 'bg-amber-50/70 border-orange-300'
+                      : 'bg-[#122f28]/70 border-[#d4af37]/40'
                   }`}
                 >
                   <div className="text-center space-y-2">
@@ -516,7 +523,7 @@ function App() {
                         ? 'text-yellow-900'
                         : isRecommendedForFajr 
                         ? 'text-teal-700' 
-                        : 'text-orange-800'
+                        : 'text-[#e9dcc3]'
                     }`}>
                       {formatTime(cycle.wakeTime)}
                     </p>
@@ -527,12 +534,12 @@ function App() {
                         ? 'text-yellow-700'
                         : isRecommendedForFajr 
                         ? 'text-teal-600' 
-                        : 'text-orange-700'
+                        : 'text-[#d4af37]'
                     }`}>
                       {cycle.cycles} cycles ({cycle.totalDuration.toFixed(1)} hours total)
                     </p>
                     {fajrTime && (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-[#e9dcc3]/60">
                         {minutesToFajr > 0
                           ? `${minutesToFajr} min before Fajr`
                           : minutesToFajr === 0
@@ -563,9 +570,9 @@ function App() {
         </div>
 
         <div className="mt-4 space-y-4">
-          <div className="bg-[#fffdf7]/80 backdrop-blur-sm rounded-lg p-4 text-sm text-slate-600 border border-orange-300">
+          <div className="bg-[#071e1b]/70 backdrop-blur-sm rounded-lg p-4 text-sm text-[#e9dcc3]/80 border border-[#d4af37]/40">
             <div className="flex items-start gap-2">
-              <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-orange-700 mt-0.5" />
+              <img src={moonIconPath} alt="Moon" className="w-4 h-4 text-[#d4af37] mt-0.5" />
               <p>
                 Includes 15-minute buffer to account for time to fall asleep. 
                 Each sleep cycle is 90 minutes. Green times give you 20-90 minutes 
@@ -574,25 +581,25 @@ function App() {
             </div>
           </div>
 
-          <div className="bg-[#fffdf7]/80 backdrop-blur-sm rounded-lg p-4 border border-orange-300">
+          <div className="bg-[#071e1b]/70 backdrop-blur-sm rounded-lg p-4 border border-[#d4af37]/40">
             <div className="flex items-start gap-2 mb-3">
               <div className="flex-shrink-0">
-                <Clock className="w-4 h-4 text-orange-700 mt-1" />
+                <Clock className="w-4 h-4 text-[#d4af37] mt-1" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-orange-900">About Sleep Cycles</h3>
-                <p className="text-sm text-slate-600">
+                <h3 className="text-sm font-semibold text-[#d4af37]">About Sleep Cycles</h3>
+                <p className="text-sm text-[#e9dcc3]/80">
                   Sleep cycles typically last 90-120 minutes, with each cycle consisting of different stages of sleep. 
                   Waking up at the end of a cycle helps you feel more refreshed.
                 </p>
                 <div className="pt-2 space-y-1">
-                  <p className="text-xs text-slate-500">Academic Reference:</p>
-                  <ul className="text-xs text-orange-800 space-y-1">
+                  <p className="text-xs text-[#e9dcc3]/60">Academic Reference:</p>
+                  <ul className="text-xs text-[#e9dcc3] space-y-1">
                     <li>
                       <a href="https://www.sleepfoundation.org/stages-of-sleep" 
                          target="_blank" 
                          rel="noopener noreferrer"
-                         className="hover:text-orange-700 underline">
+                         className="hover:text-[#d4af37] underline">
                         "Stages of Sleep" - National Sleep Foundation
                       </a>
                     </li>
