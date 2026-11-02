@@ -789,6 +789,19 @@ function App() {
                             : `${formatMinutesDuration(minutesToFajr)} after Fajr`}
                       </p>
                     )}
+                    {/* Tahajjud encouragement: only before Fajr, with
+                        at least 30 minutes to spare, so there is time
+                        for Tahajjud as well as Suhoor. Late and tight
+                        cards (under 30 minutes) never show this. */}
+                    {fajrTime && minutesToFajr >= 30 && (
+                      <p className={`text-xs font-medium ${
+                        isRecommendedForFajr
+                          ? 'text-teal-700'
+                          : 'text-[#d4af37]'
+                      }`}>
+                        🌙 You also have time for Tahajjud
+                      </p>
+                    )}
                     {isRecommendedForFajr && (
                       <span className="inline-block mt-2 px-4 py-1.5 bg-teal-100/90 text-teal-800 text-xs font-medium rounded-full border border-teal-300 shadow-sm shadow-teal-200/50 ring-1 ring-teal-400/30">
                         ✨ Suggested for Suhoor
