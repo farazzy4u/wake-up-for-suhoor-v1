@@ -188,6 +188,30 @@ function formatDuration(hours: number): string {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Duration in minutes, quantized to hours + minutes so a human does not
+// have to divide a triple-digit minute count in their head (289 min ->
+// 4h 49m, not 289 min). Written with h/m, not a colon, so it cannot be
+// mistaken for a clock time like 4:49 AM. Under 60 minutes stays as minutes.
+function formatMinutesDuration(totalMinutes: number): string {
+  const abs = Math.abs(totalMinutes);
+  if (abs < 60) return `${abs} min`;
+  const h = Math.floor(abs / 60);
+  const m = abs % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+// Privacy-friendly analytics: anonymous event names only, no values.
+// No city, coordinates, bedtime, or wake time is ever sent. If Umami is
+// not loaded (or the website ID is still a placeholder), this is a no-op.
+function trackEvent(name: string) {
+  try {
+    const umami = (window as unknown as { umami?: { track?: (eventName: string) => void } }).umami;
+    umami?.track?.(name);
+  } catch {
+    // Analytics must never break the app.
+  }
+}
+
 function formatPrayerTime(timeStr: string): string {
   const [hours, minutes] = timeStr.split(':').map(Number);
   const date = new Date();
@@ -270,7 +294,9 @@ function App() {
       const controller = new AbortController();
       searchAbortRef.current = controller;
       try {
-        setSuggestions(await searchPlaces(query, controller.signal));
+        const results = await searchPlaces(query, controller.signal);
+        setSuggestions(results);
+        trackEvent(results.length > 0 ? 'search_results_shown' : 'search_no_results');
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           setSearchError('Place search is unavailable right now. Please try again.');
@@ -321,12 +347,14 @@ function App() {
         
         if (data.code === 200 && data.status === 'OK') {
           if (!data.data?.timings?.Fajr) {
+            trackEvent('times_loaded_error');
             setError({
               type: 'LOCATION',
               message: 'Invalid city/country combination. Please check your location details.'
             });
             return;
           }
+          trackEvent('times_loaded_success');
           setPrayerTimes({
             Fajr: data.data.timings.Fajr,
             Dhuhr: data.data.timings.Dhuhr,
@@ -337,12 +365,14 @@ function App() {
             method: data.data.meta.method
           });
         } else {
+          trackEvent('times_loaded_error');
           setError({
             type: 'API',
             message: 'Could not find prayer times for this location. Please verify city and country.'
           });
         }
       } catch {
+        trackEvent('times_loaded_error');
         setError({
           type: 'GENERAL',
           message: 'Failed to fetch prayer times. Please check your internet connection.'
@@ -386,10 +416,12 @@ function App() {
       const newBedTime = new Date();
       newBedTime.setHours(hours, minutes, 0, 0);
       setBedTime(newBedTime);
+      trackEvent('bedtime_changed');
     }
   };
 
   const handlePlaceSelect = (place: PlaceSuggestion) => {
+    trackEvent('search_place_selected');
     setLocation({
       city: place.city,
       state: place.state,
@@ -530,7 +562,7 @@ function App() {
                     name="asr-school"
                     value="0"
                     checked={school === 0}
-                    onChange={() => setSchool(0)}
+                    onChange={() => { setSchool(0); trackEvent('school_shafi'); }}
                     className="accent-[#d4af37]"
                   />
                   Shafi
@@ -541,7 +573,7 @@ function App() {
                     name="asr-school"
                     value="1"
                     checked={school === 1}
-                    onChange={() => setSchool(1)}
+                    onChange={() => { setSchool(1); trackEvent('school_hanafi'); }}
                     className="accent-[#d4af37]"
                   />
                   Hanafi
@@ -571,7 +603,7 @@ function App() {
                     )}
                     <button
                       type="button"
-                      onClick={() => setRetryCount((count) => count + 1)}
+                      onClick={() => { trackEvent('times_retry_clicked'); setRetryCount((count) => count + 1); }}
                       className="mt-3 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                     >
                       Try again
@@ -751,10 +783,23 @@ function App() {
                           : 'text-[#e9dcc3]/60'
                       }`}>
                         {minutesToFajr > 0
-                          ? `${minutesToFajr} min before Fajr`
+                          ? `${formatMinutesDuration(minutesToFajr)} before Fajr`
                           : minutesToFajr === 0
                             ? 'At Fajr'
-                            : `${-minutesToFajr} min after Fajr`}
+                            : `${formatMinutesDuration(minutesToFajr)} after Fajr`}
+                      </p>
+                    )}
+                    {/* Tahajjud encouragement: only before Fajr, with
+                        at least 30 minutes to spare, so there is time
+                        for Tahajjud as well as Suhoor. Late and tight
+                        cards (under 30 minutes) never show this. */}
+                    {fajrTime && minutesToFajr >= 30 && (
+                      <p className={`text-xs font-medium ${
+                        isRecommendedForFajr
+                          ? 'text-teal-700'
+                          : 'text-[#d4af37]'
+                      }`}>
+                        🌙 You also have time for Tahajjud
                       </p>
                     )}
                     {isRecommendedForFajr && (
